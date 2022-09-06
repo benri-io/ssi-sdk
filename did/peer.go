@@ -64,6 +64,10 @@ func isPeerDID(did string) bool {
 	return r.MatchString(did)
 }
 
+func (d DIDPeer) Type() string {
+	return "peer"
+}
+
 // Checks if the Peer DID is correctly
 // formatted
 func (d DIDPeer) IsValid() bool {

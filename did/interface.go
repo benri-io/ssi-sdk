@@ -13,6 +13,7 @@ type DID interface {
 	IsValid() bool
 	ToString() string
 	Parse() (string, error)
+	Type() string
 }
 
 type DIDURL interface {
