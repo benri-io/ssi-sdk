@@ -1,0 +1,1 @@
+package ssi_wasm
