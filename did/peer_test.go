@@ -39,6 +39,33 @@ func makeSamplePeerDIDDocument1() *DIDDocument {
 	}
 }
 
+func TestEncoding(t *testing.T) {
+
+	t.Run("test encoding peer method 0", func(tt *testing.T) {
+		_, err := PeerMethod0{}.Encode(nil)
+		assert.Error(t, err)
+		doc := makeSamplePeerDIDDocument1()
+		did, err := PeerMethod0{}.Encode(doc)
+		assert.NoError(t, err)
+		assert.True(t, did.IsValid())
+		doc.VerificationMethod = nil
+		_, err = PeerMethod0{}.Encode(doc)
+		assert.Error(t, err)
+	})
+
+	t.Run("test encoding peer method 2", func(tt *testing.T) {
+		_, err := PeerMethod0{}.Encode(nil)
+		assert.Error(t, err)
+		doc := makeSamplePeerDIDDocument1()
+		did, err := PeerMethod0{}.Encode(doc)
+		assert.NoError(t, err)
+		assert.True(t, did.IsValid())
+		doc.VerificationMethod = nil
+		_, err = PeerMethod0{}.Encode(doc)
+		assert.Error(t, err)
+	})
+}
+
 func TestPeerMethod0(t *testing.T) {
 
 	kt := crypto.Ed25519
@@ -138,12 +165,14 @@ func TestPeerResolveMethod0(t *testing.T) {
 // Encoded Encryption Key: .Ez6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH
 // Encoded Signing Key: .VzXwpBnMdCm1cLmKuzgESn29nqnonp1ioqrQMRHNsmjMyppzx8xB2pv7cw8q1PdDacSrdWE3dtB9f7Nxk886mdzNFoPtY
 // Service Block:
-// {
-// 	"type": "DIDCommMessaging",
-// 	"serviceEndpoint": "https://example.com/endpoint",
-// 	"routingKeys": ["did:example:somemediator#somekey"],
-//           "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"]
-// }
+//
+//	{
+//		"type": "DIDCommMessaging",
+//		"serviceEndpoint": "https://example.com/endpoint",
+//		"routingKeys": ["did:example:somemediator#somekey"],
+//	          "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"]
+//	}
+//
 // Service Block, after whitespace removal and common word substitution:
 // {"t":"dm","s":"https://example.com/endpoint","r":["did:example:somemediator#somekey"],"a":["didcomm/v2","didcomm/aip2;env=rfc587"]}
 // Encoded Service Endpoint: .SeyJ0IjoiZG0iLCJzIjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9lbmRwb2ludCIsInIiOlsiZGlkOmV4YW1wbGU6c29tZW1lZGlhdG9yI3NvbWVrZXkiXSwiYSI6WyJkaWRjb21tL3YyIiwiZGlkY29tbS9haXAyO2Vudj1yZmM1ODciXX0=

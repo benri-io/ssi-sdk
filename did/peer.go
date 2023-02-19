@@ -1,4 +1,5 @@
-//                    DID Peer
+//	DID Peer
+//
 // ------------------------------------------------
 // https://identity.foundation/peer-did-method-spec/
 //
@@ -113,7 +114,7 @@ type byValue struct {
 	Signature string `json:"sig"`
 }
 
-//https://identity.foundation/peer-did-method-spec/#backing-storage
+// https://identity.foundation/peer-did-method-spec/#backing-storage
 type PeerDelta struct {
 	Change string    `json:"change"` // <base64url encoding of a change fragment>,
 	By     []byValue `json:"by"`     //  [ {"key": <id of key>, "sig": <signature value>} ... ],
@@ -180,6 +181,33 @@ func (d DIDPeer) IsValidPurpose(p PurposeType) bool {
 		return true
 	}
 	return false
+}
+
+func (m PeerMethod0) Encode(doc *DIDDocument) (*DIDPeer, error) {
+
+	if doc == nil {
+		return nil, errors.New("did document is nil")
+	}
+
+	keys := doc.VerificationMethod
+	if len(keys) != 1 {
+		if len(keys) == 0 {
+			return nil, errors.New("no authentication keys")
+		} else {
+			return nil, errors.New("only one auth key supportable")
+		}
+	}
+
+	key := keys[0]
+
+	encoded, err := encodePublicKeyWithKeyMultiCodecType(crypto.KeyType(key.PublicKeyJWK.KTY), key.PublicKeyBase58)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not encode public key for did:peer")
+
+	}
+
+	did := buildDIDPeerFromEncoded(0, encoded)
+	return &did, err
 }
 
 // Resolves a did:peer into a DID Document
@@ -253,6 +281,39 @@ func (d DIDPeer) buildVerificationMethod(data, did string) (*VerificationMethod,
 	}
 
 	return &vm, nil
+}
+
+// Convert a DIDDocument into DID Peer
+func (m PeerMethod2) Encode(doc *DIDDocument) (did DIDPeer, err error) {
+	if doc == nil {
+		return "", errors.New("did document is nil")
+	}
+	encoded := ""
+	for _, key := range doc.VerificationMethod {
+		purpose := PeerPurposeEncryptionCode
+		encoded, err := encodePublicKeyWithKeyMultiCodecType(crypto.KeyType(key.PublicKeyJWK.KTY), key.PublicKeyBase58)
+		if err != nil {
+			return "", errors.Wrap(err, "could not encode public key for did:peer")
+		}
+		enc, err := encodePublicKeyWithKeyMultiCodecType(m.KT, key)
+		if err != nil {
+			return "", errors.Wrap(err, "could not encode public key for did:peer")
+		}
+		encoded += "." + string(purpose) + enc
+	}
+
+	for _, service := range doc.Services {
+		purpose := PeerPurposeCapabilityServiceCode
+		if !service.IsValid() {
+			return "", errors.New("service purpose provided but invalid service definition given")
+		}
+		enc, err := did.encodeService(service)
+		if err != nil {
+			return "", errors.Wrap(err, "could not encode service for did:peer")
+		}
+		encoded += "." + string(purpose) + enc
+	}
+	return buildDIDPeerFromEncoded(2, encoded), nil
 }
 
 // Split the DID string into element.
@@ -332,7 +393,7 @@ func (m PeerMethod2) Resolve(did DID) (*DIDDocument, error) {
 // Document. This method is necessary when both an encryption key and a signing
 // key are required.
 //
-// It determines the purpose implicitly by looking at the type of object
+// # It determines the purpose implicitly by looking at the type of object
 //
 // Start with the did prefix
 // did:peer:2
@@ -495,7 +556,6 @@ type ServiceTypeAbbreviationMap map[string]string
 // Calculate the SHA256 [RFC4634] hash of the bytes of the stored variant of the
 // genesis version of the DID doc, and make this value the new DID's numeric
 // basis.
-//
 func (m PeerMethod1) Generate() (*DIDPeer, error) {
 	// Create a Genesis Version
 	return nil, util.NotImplementedError
